@@ -1,0 +1,59 @@
+﻿389,100
+370,0
+361,1
+362,1
+363,0.
+364,0.
+365,0.
+366,0.
+367,0
+376,0
+375,c:0.00
+374,4
+7,plan_version
+6,All Versions
+7,plan_business_unit
+6,All Business Units
+7,plan_chart_of_accounts
+6,plan_top_level_accts
+7,plan_exchange_rates
+6,actual
+360,2
+7,plan_time
+6,2004 Total
+7,plan_source
+6,Goal
+371,1
+7,plan_department
+270,0
+274,Department
+275,95
+{TM1SORT( {TM1FILTERBYLEVEL( { HIERARCHIZE( {TM1SUBSETALL( [plan_department] )} ) }, 0)}, ASC)}
+281,0
+282,Nlevel Dept Header
+373,4
+2
+1
+1
+1
+372,0
+372,00
+384,0
+385,0
+377,4
+454
+340
+993
+771
+378,0
+382,255
+379,7
+0
+0
+0
+0
+0
+0
+0
+11,20050107201422
+381,0

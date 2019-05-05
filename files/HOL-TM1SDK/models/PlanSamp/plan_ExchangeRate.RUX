@@ -1,0 +1,7 @@
+﻿FORMAT==100
+skipcheck;
+
+['local']=1;
+
+[]=IF(!plan_currency @= DB('plan_Control','Corporate Currency','Setting'),1, STET);
+

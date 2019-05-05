@@ -1,0 +1,5 @@
+﻿FILE_FORMAT=100
+ENTRYNAME=Set Rates by Currency
+ENTRYTYPE=blob
+ENTRYREFERENCE=TM1:///blob/PUBLIC/.\}Externals\Set Rates by Currency.xlsx_20150504133319.xlsx
+REMOVEBLOBONDELETE=Yes

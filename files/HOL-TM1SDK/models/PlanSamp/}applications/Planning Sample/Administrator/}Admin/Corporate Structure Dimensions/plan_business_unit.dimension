@@ -1,0 +1,4 @@
+﻿FILE_FORMAT=100
+ENTRYNAME=plan_business_unit
+ENTRYTYPE=dimension
+ENTRYREFERENCE=TM1:///DIMENSION/PUBLIC/plan_business_unit

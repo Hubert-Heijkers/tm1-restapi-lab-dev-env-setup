@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>TM1Top</title>
+
+<style type="text/css">
+body {
+	background: #cedfe6;
+    font-family: Verdana;
+    font-size: 80%;
+}
+
+table
+{
+	border-collapse: collapse;
+}
+
+iframe
+{
+	position: absolute;
+	left : 50%;
+	top : 50%;
+	margin-left: -300px;
+	margin-top: -250px;
+	width: 600px;
+	height: 500px;
+}
+
+</style>
+
+<script type="text/javascript" src="jquery-1.9.1.js"></script>
+<script type="text/javascript" src="jquery.xpath.js"></script>
+
+</head>
+
+<script type="text/javascript">
+function init()
+{
+	"use strict";
+
+	/*
+	 * Compensate for missing functions in various browsers/browser versions
+	 */
+
+	if ( !String.prototype.startsWith )
+	{
+		Object.defineProperty( String.prototype, "startsWith", { value: function startsWith( _substr/* _offset*/ )
+		{
+			var offset = arguments[1] >>> 0;
+			return this.lastIndexOf( _substr, offset ) === offset;
+		} } );
+	}
+
+	/*
+	 * Helper classes for building tables in HTML.
+	 * NOTE: These are by no means complete implementations but just what we needed for the sample!
+	 */
+
+	function Field( _name, _resolver, _fields )
+	{
+		this.name = _name;
+		if ( _resolver )
+			this.resolve = _resolver;
+		if ( _fields )
+			this.fields = _fields;
+	}
+
+	Field.prototype.name = null;
+	Field.prototype.fields = null;
+
+	Field.prototype.resolve = function( _obj )
+	{
+		return _obj[this.name];
+	};
+
+	Field.prototype.renderHeader = function( _thead, _tr )
+	{
+		var header = _tr.appendChild( document.createElement( "th" ));
+		header.textContent = this.name;
+
+		if ( this.fields )
+		{
+			header.colSpan = this.fields.length;
+			// Update rowspan for this node and all previous siblings
+			for ( var node = header.previousSibling; node; node = node.previousSibling )
+				node.rowSpan = 2;
+
+			var subRow = _thead.appendChild( document.createElement( "tr" ));
+			for ( var iField = 0; iField < this.fields.length; ++iField )
+				this.fields[iField].renderHeader( _thead, subRow );
+		}
+	};
+
+	Field.prototype.renderData = function( _tbody, _tr, _data )
+	{
+		if ( this.fields )
+		{
+			var subValues = this.resolve( _data ), subRow = _tr;
+			var header = _tr.lastChild;
+			if ( subValues.length > 1 )
+			{
+				// Update rowspan for this node and all previous siblings
+				for ( var node = header; node; node = node.previousSibling )
+					node.rowSpan = subValues.length;
+			}
+			if ( subValues.length > 0 )
+			{
+				for ( var iData = 0; iData < subValues.length; ++iData )
+				{
+					var subData = subValues[iData];
+					if ( iData > 0 )
+						subRow = _tbody.appendChild( document.createElement( "tr" ));
+
+					for ( var iField = 0; iField < this.fields.length; ++iField )
+						this.fields[iField].renderData( _tbody, subRow, subData );
+				}
+			}
+			else
+			{
+				for ( var iField = 0; iField < this.fields.length; ++iField )
+					_tr.appendChild( document.createElement( "td" ));
+			}
+		}
+		else
+		{
+			var cell = _tr.appendChild( document.createElement( "td" ));
+			cell.textContent = this.resolve( _data );
+		}
+	};
+
+	function Table( _fields )
+	{
+		this.fields = _fields;
+	}
+
+	Table.prototype.fields = null;
+
+	Table.prototype.renderHeader = function( _thead )
+	{
+		var tr = _thead.appendChild( document.createElement( "tr" ));
+
+		for ( var iField = 0; iField < this.fields.length; ++iField )
+			this.fields[iField].renderHeader( _thead, tr );
+	}
+
+	Table.prototype.renderData = function( _tbody, _data )
+	{
+		for ( var iData = 0; iData < _data.length; ++iData )
+		{
+			var tr = _tbody.appendChild( document.createElement( "tr" ));
+			var dataRow = _data[iData];
+			for ( var iField = 0; iField < this.fields.length; ++iField )
+				this.fields[iField].renderData( _tbody, tr, dataRow );
+		}
+	}
+
+	/*
+	 * REST request and CAM authentication helpers
+	 */
+
+	var loginFrame = null;
+	
+	function showCAMLogin( _urlCognosGateway, _onClose )
+	{
+		function onClose()
+		{
+			// This callback is invoked from the iframe. wait a cycle before killing what calls it.
+			setTimeout( function()
+			{
+				// Remove handlers
+				delete window.ccModalCallBack;
+				delete window.closeErrorPage;
+
+				// Remove iframe and closure reference
+				loginFrame.parentNode.removeChild( loginFrame );
+				loginFrame = null;
+				
+				// Call any on close event if one specified.
+				if ( _onClose )
+					_onClose();
+
+			}, 1 );
+		}
+
+		if ( loginFrame !== null )
+			return;
+
+		// Create a new iframe in which we'll show the CAM login page	
+		loginFrame = document.body.appendChild( document.createElement( "iframe" ));
+
+		// Ugly hack to prevent IE from asking to close the window
+		try
+		{
+			Object.defineProperty( loginFrame.contentWindow, "close", { value: function() {} } );
+		}
+		catch( e )
+		{
+		}
+
+		// Register handlers
+		window.ccModalCallBack = window.closeErrorPage = onClose;
+
+		// Show the CAM login page
+		loginFrame.src = _urlCognosGateway + "?b_action=xts.run&m=portal/close.xts&h_CAM_action=logon";
+	}
+	
+	function setFrameContent(content)
+	{
+	   //var src = 'data:text/html;charset=utf-8,' + encodeURIComponent( content );
+	   var iframe = document.createElement('iframe');
+	   iframe.width = '100%';
+	   iframe.height = '70%';
+	   // var html = '<body>Foo</body>';
+	   $('#content').empty().append(iframe);
+	   // var iframe = $('#content');//.src = src;
+	   iframe.contentWindow.document.open();
+	   iframe.contentWindow.document.write(content);
+	   iframe.contentWindow.document.close();
+    }
+	   
+	function showOIDCLogin( _urlCognosGateway, _onClose )
+	{
+		function onClose()
+		{
+			// This callback is invoked from the iframe. wait a cycle before killing what calls it.
+			setTimeout( function()
+			{
+				// Remove handlers
+				delete window.ccModalCallBack;
+				delete window.closeErrorPage;
+
+				// Remove iframe and closure reference
+				loginFrame.parentNode.removeChild( loginFrame );
+				loginFrame = null;
+				
+				// Call any on close event if one specified.
+				if ( _onClose )
+					_onClose();
+
+			}, 1 );
+		}
+
+		if ( loginFrame !== null )
+			return;
+
+		// Create a new iframe in which we'll show the OIDC login page	
+		loginFrame = document.body.appendChild( document.createElement( "iframe" ));
+
+		// Ugly hack to prevent IE from asking to close the window
+		try
+		{
+			Object.defineProperty( loginFrame.contentWindow, "close", { value: function() {} } );
+		}
+		catch( e )
+		{
+		}
+
+		// Register handlers
+		window.ccModalCallBack = window.closeErrorPage = onClose;
+
+		// Show the OIDC login page
+		loginFrame.contentWindow.document.open();
+		loginFrame.contentWindow.document.write(_body);
+		loginFrame.contentWindow.document.close();
+	}
+
+	function getCAMPassport()
+	{
+		var match = document.cookie.match( /(^|;\s*)cam_passport=([^$;]*)/ );
+		return match && match[2];
+	}
+
+	var authorizationCAM = null;
+	
+	function authenticateUsingCAM( _urlCognosGateway, _onSuccess, _onFailure )
+	{
+		var camPassport = getCAMPassport();
+		
+		// Do we happen to have a CAM passport already?
+		if ( camPassport )
+		{
+			// We do! Were we trying to reuse it already?
+			if ( !authorizationCAM )
+			{
+				// Apparently not, try reusing it first.
+				authorizationCAM = 'CAMPassport ' + camPassport;
+				
+				// Call any on complete event if one specified.
+				if ( _onSuccess )
+					_onSuccess();
+				return;
+			}
+			else
+			{
+				// Existing CAM passport is apparently not, or no longer, valid for login with TM1
+				authorizationCAM = null;
+			}
+		}
+		
+		// Show a CAM login page
+		showCAMLogin( _urlCognosGateway, function()
+		{
+			// Was the logon successful?
+			camPassport = getCAMPassport();
+			if ( camPassport )
+			{
+				// Yes, set the authentication header to be used with the next request accordingly
+				authorizationCAM = 'CAMPassport ' + camPassport;
+
+				// Call any on complete event if one specified.
+				if ( _onSuccess )
+					_onSuccess();
+			}
+			else
+			{
+				// Failed to authenticate.
+				if ( _onFailure )
+					_onFailure();
+			}
+		} );
+	}
+
+	function authenticateUsingOIDC( _body, _onSuccess, _onFailure )
+	{
+		// Show a OIDC login page
+		showOIDCLogin( _body, function()
+		{
+			// Was the logon successful?
+			camPassport = getCAMPassport();
+			if ( camPassport )
+			{
+				// Yes, set the authentication header to be used with the next request accordingly
+				authorizationCAM = 'CAMPassport ' + camPassport;
+
+				// Call any on complete event if one specified.
+				if ( _onSuccess )
+					_onSuccess();
+			}
+			else
+			{
+				// Failed to authenticate.
+				if ( _onFailure )
+					_onFailure();
+			}
+		} );
+	}
+
+	function handleUnauthorizedCAM( _response, _onSuccess, _onFailure )
+	{
+		var bHandled = false;
+		
+		// Handle the 401 Unauthorized response for CAMPassport
+		if ( _response.status === 401 )
+		{
+			var authHeader = _response.getResponseHeader( "WWW-Authenticate" );
+			if ( authHeader )
+			{
+				authHeader.split( /\s*,\s*/ ).some( function( _entry )
+				{
+					if ( _entry.startsWith( "CAMPassport" ))
+					{
+						authenticateUsingCAM( _entry.substr( 12 ), _onSuccess, _onFailure );
+						bHandled = true;
+						return true;
+					}
+					else if ( _entry.startsWith( "openid" ))
+					{
+						alert( _response );
+						authenticateUsingOIDC( _response, _onSuccess, _onFailure );
+						bHandled = true;
+						return true;
+					}
+					return false;
+				} );
+			}
+		}
+		return bHandled;
+	}
+
+	var sessionContext = document.getElementsByTagName("title")[0].innerHTML;
+
+	function executeRESTRequest( _url, _accept, _onSuccess, _onError )
+	{
+		// Build set of headers to be passed along with the request
+		var headers = { };
+		if ( _accept )
+			headers['Accept'] = _accept;
+		if ( authorizationCAM )
+			headers['Authorization'] = authorizationCAM;
+		if ( sessionContext )
+			headers['TM1-SessionContext'] = sessionContext
+
+		// Execute the request
+		$.ajax(
+		{
+			async: true,
+			headers: headers,
+			url: _url,
+			xhrFields: { withCredentials: true },
+			success: function( _data )
+			{
+				authorizationCAM = null;
+				if ( _onSuccess )
+					_onSuccess( _data );
+			},
+			error: function( _response ) 
+			{
+				if ( _onError )
+					_onError( _response );
+			}
+		} );
+	}
+
+	/*
+	 * Application data
+	 */
+
+	var serviceRootURI = "";
+	var serviceSupportsSessions = false;
+	var selectedMode = "Threads";
+	var currentMode = "";
+	var updateInterval = 200;
+	var updateTimer = 0;
+	var refreshInterval = 100;
+	var bRunning = false;
+
+	/*
+	 * Metadata helper
+	 */
+	
+	function initMetadata( _metadata )
+	{
+		function prefixResolver( _prefix )
+		{
+			if ( _prefix === "edmx" )
+				return "http://docs.oasis-open.org/odata/ns/edmx";
+			if ( _prefix === "tm1" )
+				return "http://schemas.ibm.com/tm1/api/v1/edmx";
+			return "http://docs.oasis-open.org/odata/ns/edm";
+		}
+
+		// Validate if this version of the server supports Sessions
+		if ( $( _metadata ).xpath( "edmx:Edmx/edmx:DataServices/edm:Schema/edm:EntityType[@Name='Session']", prefixResolver ).length > 0 )
+		{
+			// Session entity type exists, so enable Sessions view.
+			serviceSupportsSessions = true;
+		}
+		else
+		{
+			// Older version of TM1 Server, only show Threads view.
+			serviceSupportsSessions = false;
+		}
+	}
+	
+	/*
+	 * Table definitions
+	 */
+	
+	var threadsTable = new Table(
+	[
+		new Field( "Thread ID", function( _obj ){ return ( serviceSupportsSessions ) ? _obj.ID : _obj.ThreadID; } ),
+		new Field( "Session ID", function( _obj ){ return ( serviceSupportsSessions ) ? ( _obj.Session ? _obj.Session.ID : "0" ) : _obj.SessionID; } ),
+		new Field( "Type" ),
+		new Field( "Name" ),
+		new Field( "Context" ),
+		new Field( "State" ),
+		new Field( "Function" ),
+		new Field( "ObjectType" ),
+		new Field( "ObjectName" ),
+		new Field( "RLocks" ),
+		new Field( "IXLocks" ),
+		new Field( "WLocks" ),
+		new Field( "ElapsedTime" ),
+		new Field( "WaitTime" ),
+		new Field( "Info" )
+	] );
+	
+	var sessionsTable = new Table(
+	[
+		new Field( "Session ID", function( _obj ){ return _obj.ID; } ),
+		new Field( "User", function( _obj ){ return _obj.User ? _obj.User.FriendlyName : ""; } ),
+		new Field( "Threads", function( _obj ){ return _obj.Threads; },
+		[
+			new Field( "Thread ID", function( _obj ){ return _obj.ID; } ),
+			new Field( "Context" ),
+			new Field( "State" ),
+			new Field( "Function" ),
+			new Field( "ObjectType" ),
+			new Field( "ObjectName" ),
+			new Field( "RLocks" ),
+			new Field( "IXLocks" ),
+			new Field( "WLocks" ),
+			new Field( "ElapsedTime" ),
+			new Field( "WaitTime" ),
+			new Field( "Info" )
+		] )
+	] );
+
+	/*
+	 * UI controls
+	 */
+
+	var editServiceRootURI = document.getElementById( "servicerootURI" );
+	var btnThreads = document.getElementById( "btnthreads" );
+	var btnSessions = document.getElementById( "btnsessions" );
+	var btnStart = document.getElementById( "btnstart" );
+	var btnStop = document.getElementById( "btnstop" );
+	var toptable = document.getElementById( "toptable" );
+	var topTableHead = document.getElementById( "toptableHead" );
+	var topTableBody = document.getElementById( "toptableBody" );
+
+	/*
+	 * Implementation
+	 */
+	
+	function clear( _node )
+	{
+		while ( _node.firstChild )
+			_node.removeChild( _node.firstChild );
+	}
+
+	function reset()
+	{
+		// Hide the results table
+    	toptable.style.display = "none";
+		
+		// Reset the start and stop buttons
+		btnStop.disabled = true;
+		btnStart.disabled = false;
+
+		// Stopped running
+		bRunning = false;
+		updateTimer = 0;
+		
+		// Enable editing service root URI again
+		editServiceRootURI.disabled = false;
+	}	
+
+	function handleUpdateError( _response, _onSuccess )
+	{ 
+		if ( !handleUnauthorizedCAM( _response, _onSuccess, reset ))
+		{
+			alert( "Request failed with status: " + _response.status + " " + _response.statusText );
+			reset();
+		}
+	}
+	
+	function updateThreadsTable( _onUpdate )
+	{
+		executeRESTRequest( 
+			( serviceSupportsSessions ) 
+				? serviceRootURI + "Threads?$expand=Session($select=ID)&$orderby=ID"
+				: serviceRootURI + "Threads?$orderby=ThreadID", 
+			"application/json; charset=utf-8", 
+			function( _data )
+			{
+				clear( topTableBody );
+				threadsTable.renderData( topTableBody, _data.value );
+				toptable.style.display = "";
+				_onUpdate();
+			}, 
+			function( _response )
+			{
+				handleUpdateError( 
+					_response, 
+					function()
+					{
+						// Retry the update immediately!
+						updateThreadsTable( _onUpdate );
+					}
+				);
+			}
+		);
+	}
+
+	function updateSessionsTable( _onUpdate )
+	{
+		executeRESTRequest( 
+			serviceRootURI + "Sessions?$expand=User($select=FriendlyName),Threads($orderby=ID)&$orderby=ID", 
+			"application/json; charset=utf-8",
+			function( _data )
+			{
+				clear( topTableBody );
+				sessionsTable.renderData( topTableBody, _data.value );
+				toptable.style.display = "";
+				_onUpdate();
+			},
+			function( _response )
+			{
+				handleUpdateError( 
+					_response, 
+					function()
+					{
+						// Retry the update immediately!
+						updateSessionsTable( _onUpdate );
+					}
+				);
+			}
+		);
+	}
+	
+	function update( _onUpdate )
+	{
+		if ( currentMode !== selectedMode )
+		{
+			// Hide the results table
+			toptable.style.display = "none";
+
+			// Switch to the selected mode
+			currentMode = selectedMode;
+
+			// Update the head of the table accordingly
+			clear( topTableHead );
+			if ( currentMode === "Threads" )
+				threadsTable.renderHeader( topTableHead );	
+			else
+				sessionsTable.renderHeader( topTableHead );
+		}
+	
+		// Update the data in the table
+		if ( currentMode === "Threads" )
+			updateThreadsTable( _onUpdate );
+		else
+			updateSessionsTable( _onUpdate );
+	}
+	
+	function run()
+	{
+		// Still running?
+		if ( bRunning )
+		{
+			// Update required?
+			if ( updateTimer <= refreshInterval )
+			{
+				// Reset timer
+				updateTimer = updateInterval;
+			
+				// Perform update
+				update( 
+					function()
+					{
+						// Repeat
+						setTimeout( run, refreshInterval );
+					}
+				);
+			}
+			else
+			{
+				// Update time only got closer
+				updateTimer = updateTimer - refreshInterval;
+
+				// Repeat
+				setTimeout( run, refreshInterval );
+			}
+		}
+		else
+		{
+			// Stop iterating
+			reset();
+		}
+	}
+
+	/*
+	 * Event handlers
+	 */
+	 
+	function start()
+	{
+		// Initiate the start sequence by allowing the user to signal us to stop again
+		btnStart.disabled = true;
+		btnStop.disabled = false;
+		bRunning = true;
+		
+		// Disable editing service root URI again
+		editServiceRootURI.disabled = true;
+		
+		// Are we set up for the specified TM1 service URI?
+		if (( serviceRootURI.length === 0 ) || ( serviceRootURI !== editServiceRootURI.value ))
+		{
+			// For a new service root URI we do some initialization based on the metadata
+			if ( editServiceRootURI.value.length > 0 )
+			{
+				executeRESTRequest( 
+					editServiceRootURI.value + "$metadata", 
+					"application/xml; charset=utf-8", 
+					function( _metadata )
+					{
+						// Metadata based initialization for this server
+						serviceRootURI = editServiceRootURI.value;
+						initMetadata( _metadata );
+
+						// Update UI components based on capabilities
+						if ( serviceSupportsSessions )
+						{
+							btnSessions.disabled = false;
+							btnThreads.disabled = false;
+						}
+						else
+						{
+							// Older version of TM1 Server, only support Threads
+							btnThreads.checked = true;
+							btnSessions.checked = false;
+							btnThreads.disabled = true;
+							btnSessions.disabled = true;
+						}
+
+						// Start updating
+						run();
+					},
+					function( _response )
+					{
+						// Failed to retrieve metadata, alert the user accordingly
+						var authHeader = _response.getResponseHeader( "WWW-Authenticate" );
+						var headers = _response.getAllResponseHeaders();
+						alert( "Failed to retrieve metadata for server: " + editServiceRootURI.value + ". Status: " + _response.status + " " + _response.statusText + "\nWWW-Authenticate: " + authHeader + "\nHeaders: " + headers + "\n" );
+						reset();
+					} 
+				);
+			}
+			else
+			{
+				// No service root URI specified. Politely ask the user to provide one
+				alert( "Please provide a service root URI for the TM1 server you'd like to connect too.\n\nExample: http://mytm1server.domain.com:12345/api/v1/" );
+				reset();
+			}
+		}
+		else
+		{
+			// Start updating
+			run();
+		}
+	}
+	
+	function stop()
+	{
+		// Simply signal the intend to stop updating
+		btnStop.disabled = true;
+		bRunning = false;
+	}
+	 
+	function showThreads()
+	{
+		// Set the newly selected mode
+		selectedMode = "Threads";
+
+		// Trigger the switch immediately by resetting the update timer to 0
+		updateTimer = 0;
+	}
+	
+	function showSessions()
+	{
+		// Set the newly selected mode
+		selectedMode = "Sessions";
+
+		// Trigger the switch immediately by resetting the update timer to 0
+		updateTimer = 0;
+	}
+
+	/*
+	 * Register event handlers
+	 */
+
+	btnThreads.addEventListener( "click", showThreads );
+	btnSessions.addEventListener( "click", showSessions );
+	btnStart.addEventListener( "click", start );
+	btnStop.addEventListener( "click", stop );
+
+	/*
+	 * Initialize initial state
+	 */
+
+	btnThreads.disabled = serviceSupportsSessions ? true : false;
+	btnSessions.disabled = serviceSupportsSessions ? true : false;
+	btnStart.disabled = false;
+	btnStop.disabled = true;
+
+};
+
+</script>
+
+<body onload="init();">
+
+Service URI: <input type="text" id="servicerootURI" value="/api/v1/">
+<input id="btnthreads" type="radio" name="toptabletype" value="Threads" checked="checked"> Threads
+<input id="btnsessions" type="radio" name="toptabletype" value="Sessions"> Sessions
+<button id="btnstart">Start</button>
+<button id="btnstop">Stop</button>
+<br>
+<br>
+<table style="display:none" id="toptable" border="1">
+	<thead id="toptableHead"></thead>
+	<tbody id="toptableBody"></tbody>
+</table>
+
+</body>
+
+</html>

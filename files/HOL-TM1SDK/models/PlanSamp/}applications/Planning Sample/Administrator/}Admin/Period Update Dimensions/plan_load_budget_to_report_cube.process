@@ -1,0 +1,4 @@
+﻿FILE_FORMAT=100
+ENTRYNAME=plan_load_budget_to_report_cube
+ENTRYTYPE=process
+ENTRYREFERENCE=TM1:///PROCESS/PUBLIC/plan_load_budget_to_report_cube

@@ -1,0 +1,50 @@
+﻿FORMAT==100
+skipcheck;
+
+['local','line input']=DB('plan_BudgetPlanLineItem',
+!plan_version,!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'local','All Lines',!plan_time);
+
+[plan_exchange_rates:'local', plan_source:'goal']=N:
+DB('plan_BudgetPlan',!plan_version,!plan_business_unit,!plan_department,!plan_chart_of_accounts,'actual',
+!plan_source,!plan_time) *
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'actual',!plan_time);
+
+['actual']=N:if(!plan_source @= 'goal', stet, DB('plan_BudgetPlan',!plan_version,!plan_business_unit,
+!plan_department,!plan_chart_of_accounts,'local',!plan_source,!plan_time)/
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'actual',!plan_time));
+
+['beginning']=N:DB('plan_BudgetPlan',!plan_version,!plan_business_unit,
+!plan_department,!plan_chart_of_accounts,'local',!plan_source,!plan_time)/
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'begining',!plan_time);
+
+['ending']=N:DB('plan_BudgetPlan',!plan_version,!plan_business_unit,
+!plan_department,!plan_chart_of_accounts,'local',!plan_source,!plan_time)/
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'ending',!plan_time);
+
+['planning']=N:DB('plan_BudgetPlan',!plan_version,!plan_business_unit,
+!plan_department,!plan_chart_of_accounts,'local',!plan_source,!plan_time)/
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'planning',!plan_time);
+
+['spot']=N:DB('plan_BudgetPlan',!plan_version,!plan_business_unit,
+!plan_department,!plan_chart_of_accounts,'local',!plan_source,!plan_time)/
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'spot',!plan_time);
+
+
+
+Feeders;
+
+['local']=>DB('plan_BudgetPlan',!plan_version,!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'Actual',!plan_source,!plan_time);
+
+['local']=>DB('plan_BudgetPlan',!plan_version,!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'planning',!plan_source,!plan_time);
+
+['local']=>DB('plan_BudgetPlan',!plan_version,!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'spot',!plan_source,!plan_time);
+
+['local']=>DB('plan_BudgetPlan',!plan_version,!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'beginning',!plan_source,!plan_time);
+
+['local']=>DB('plan_BudgetPlan',!plan_version,!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'ending',!plan_source,!plan_time);

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>TM1MDXSimple</title>
+
+<style type="text/css">
+body {
+	background: #cedfe6;
+    font-family: Verdana;
+    font-size: 80%;
+}
+
+table
+{
+	border-collapse: collapse;
+}
+
+iframe
+{
+	position: absolute;
+	left : 50%;
+	top : 50%;
+	margin-left: -300px;
+	margin-top: -250px;
+	width: 600px;
+	height: 500px;
+}
+
+</style>
+
+<script type="text/javascript" src="jquery-1.9.1.js"></script>
+<script type="text/javascript" src="jquery.xpath.js"></script>
+
+</head>
+
+<script type="text/javascript">
+function init()
+{
+	"use strict";
+
+	/*
+	 * Compensate for missing functions in various browsers/browser versions
+	 */
+
+	if ( !String.prototype.startsWith )
+	{
+		Object.defineProperty( String.prototype, "startsWith", { value: function startsWith( _substr/* _offset*/ )
+		{
+			var offset = arguments[1] >>> 0;
+			return this.lastIndexOf( _substr, offset ) === offset;
+		} } );
+	}
+
+	/*
+	 * REST request and CAM authentication helpers
+	 */
+
+	var loginFrame = null;
+	
+	function showCAMLogin( _urlCognosGateway, _onClose )
+	{
+		function onClose()
+		{
+			// This callback is invoked from the iframe. wait a cycle before killing what calls it.
+			setTimeout( function()
+			{
+				// Remove handlers
+				delete window.ccModalCallBack;
+				delete window.closeErrorPage;
+
+				// Remove iframe and closure reference
+				loginFrame.parentNode.removeChild( loginFrame );
+				loginFrame = null;
+				
+				// Call any on close event if one specified.
+				if ( _onClose )
+					_onClose();
+
+			}, 1 );
+		}
+
+		if ( loginFrame !== null )
+			return;
+
+		// Create a new iframe in which we'll show the CAM login page	
+		loginFrame = document.body.appendChild( document.createElement( "iframe" ));
+
+		// Ugly hack to prevent IE from asking to close the window
+		try
+		{
+			Object.defineProperty( loginFrame.contentWindow, "close", { value: function() {} } );
+		}
+		catch( e )
+		{
+		}
+
+		// Register handlers
+		window.ccModalCallBack = window.closeErrorPage = onClose;
+
+		// Show the CAM login page
+		loginFrame.src = _urlCognosGateway + "?b_action=xts.run&m=portal/close.xts&h_CAM_action=logon";
+	}
+	
+	function setFrameContent(content)
+	{
+	   //var src = 'data:text/html;charset=utf-8,' + encodeURIComponent( content );
+	   var iframe = document.createElement('iframe');
+	   iframe.width = '100%';
+	   iframe.height = '70%';
+	   // var html = '<body>Foo</body>';
+	   $('#content').empty().append(iframe);
+	   // var iframe = $('#content');//.src = src;
+	   iframe.contentWindow.document.open();
+	   iframe.contentWindow.document.write(content);
+	   iframe.contentWindow.document.close();
+    }
+	   
+	function showOIDCLogin( _urlCognosGateway, _onClose )
+	{
+		function onClose()
+		{
+			// This callback is invoked from the iframe. wait a cycle before killing what calls it.
+			setTimeout( function()
+			{
+				// Remove handlers
+				delete window.ccModalCallBack;
+				delete window.closeErrorPage;
+
+				// Remove iframe and closure reference
+				loginFrame.parentNode.removeChild( loginFrame );
+				loginFrame = null;
+				
+				// Call any on close event if one specified.
+				if ( _onClose )
+					_onClose();
+
+			}, 1 );
+		}
+
+		if ( loginFrame !== null )
+			return;
+
+		// Create a new iframe in which we'll show the OIDC login page	
+		loginFrame = document.body.appendChild( document.createElement( "iframe" ));
+
+		// Ugly hack to prevent IE from asking to close the window
+		try
+		{
+			Object.defineProperty( loginFrame.contentWindow, "close", { value: function() {} } );
+		}
+		catch( e )
+		{
+		}
+
+		// Register handlers
+		window.ccModalCallBack = window.closeErrorPage = onClose;
+
+		// Show the OIDC login page
+		loginFrame.contentWindow.document.open();
+		loginFrame.contentWindow.document.write(_body);
+		loginFrame.contentWindow.document.close();
+	}
+
+	function getCAMPassport()
+	{
+		var match = document.cookie.match( /(^|;\s*)cam_passport=([^$;]*)/ );
+		return match && match[2];
+	}
+
+	var authorizationCAM = null;
+	
+	function authenticateUsingCAM( _urlCognosGateway, _onSuccess, _onFailure )
+	{
+		var camPassport = getCAMPassport();
+		
+		// Do we happen to have a CAM passport already?
+		if ( camPassport )
+		{
+			// We do! Were we trying to reuse it already?
+			if ( !authorizationCAM )
+			{
+				// Apparently not, try reusing it first.
+				authorizationCAM = 'CAMPassport ' + camPassport;
+				
+				// Call any on complete event if one specified.
+				if ( _onSuccess )
+					_onSuccess();
+				return;
+			}
+			else
+			{
+				// Existing CAM passport is apparently not, or no longer, valid for login with TM1
+				authorizationCAM = null;
+			}
+		}
+		
+		// Show a CAM login page
+		showCAMLogin( _urlCognosGateway, function()
+		{
+			// Was the logon successful?
+			camPassport = getCAMPassport();
+			if ( camPassport )
+			{
+				// Yes, set the authentication header to be used with the next request accordingly
+				authorizationCAM = 'CAMPassport ' + camPassport;
+
+				// Call any on complete event if one specified.
+				if ( _onSuccess )
+					_onSuccess();
+			}
+			else
+			{
+				// Failed to authenticate.
+				if ( _onFailure )
+					_onFailure();
+			}
+		} );
+	}
+
+	function authenticateUsingOIDC( _body, _onSuccess, _onFailure )
+	{
+		// Show a OIDC login page
+		showOIDCLogin( _body, function()
+		{
+			// Was the logon successful?
+			camPassport = getCAMPassport();
+			if ( camPassport )
+			{
+				// Yes, set the authentication header to be used with the next request accordingly
+				authorizationCAM = 'CAMPassport ' + camPassport;
+
+				// Call any on complete event if one specified.
+				if ( _onSuccess )
+					_onSuccess();
+			}
+			else
+			{
+				// Failed to authenticate.
+				if ( _onFailure )
+					_onFailure();
+			}
+		} );
+	}
+
+	function handleUnauthorizedCAM( _response, _onSuccess, _onFailure )
+	{
+		var bHandled = false;
+		
+		// Handle the 401 Unauthorized response for CAMPassport
+		if ( _response.status === 401 )
+		{
+			var authHeader = _response.getResponseHeader( "WWW-Authenticate" );
+			if ( authHeader )
+			{
+				authHeader.split( /\s*,\s*/ ).some( function( _entry )
+				{
+					if ( _entry.startsWith( "CAMPassport" ))
+					{
+						authenticateUsingCAM( _entry.substr( 12 ), _onSuccess, _onFailure );
+						bHandled = true;
+						return true;
+					}
+					else if ( _entry.startsWith( "openid" ))
+					{
+						alert( _response );
+						authenticateUsingOIDC( _response, _onSuccess, _onFailure );
+						bHandled = true;
+						return true;
+					}
+					return false;
+				} );
+			}
+		}
+		return bHandled;
+	}
+
+	var sessionContext = document.getElementsByTagName("title")[0].innerHTML;
+	
+	function executeRESTRequest( _type, _url, _data, _content_type, _accept, _onSuccess, _onError )
+	{
+		// Build set of headers to be passed along with the request
+		var headers = { };
+		if ( _accept )
+			headers['Accept'] = _accept;
+		if ( _content_type )
+			headers['Content-Type'] = _content_type;
+		if ( authorizationCAM )
+			headers['Authorization'] = authorizationCAM;
+		if ( sessionContext )
+			headers['TM1-SessionContext'] = sessionContext
+
+		// Execute the request
+		$.ajax(
+		{
+			async: true,
+			type: _type,
+			url: _url,
+			headers: headers,
+			xhrFields: { withCredentials: true },
+			data: _data,
+			success: function( _data )
+			{
+				authorizationCAM = null;
+				if ( _onSuccess )
+					_onSuccess( _data );
+			},
+			error: function( _response ) 
+			{
+				if ( _onError )
+					_onError( _response );
+			}
+		} );
+	}
+
+	/*
+	 * Application data
+	 */
+
+	var serviceRootURI = "";
+
+	/*
+	 * UI controls
+	 */
+
+	var editServiceRootURI = document.getElementById( "servicerootURI" );
+	var btnExecute = document.getElementById( "btnexecute" );
+	var textMDX = document.getElementById( "MDX" );
+	var textJSON = document.getElementById( "JSON" );
+
+	/*
+	 * Implementation
+	 */
+	
+	function handleError( _response, _onSuccess )
+	{ 
+		if ( !handleUnauthorizedCAM( 
+			_response, 
+			_onSuccess, 
+			function()
+			{
+				alert( "Request failed with status: " + _response.status + " " + _response.statusText );
+			} )
+		)
+		{
+			alert( "Request failed with status: " + _response.status + " " + _response.statusText );
+		}
+	}
+
+	/*
+	 * Event handlers
+	 */
+
+	var cellsetTable = document.getElementById( "cellsettable" );
+	var cellsetTableBody = document.getElementById( "cellsettableBody" );
+
+	function clear( _node )
+	{
+		while ( _node.firstChild )
+			_node.removeChild( _node.firstChild );
+	}
+	
+	function executeMDX()
+	{
+		serviceRootURI = editServiceRootURI.value;
+	
+		executeRESTRequest( 
+			"POST",
+			serviceRootURI + "ExecuteMDX?$expand=Axes($expand=Hierarchies($select=Name,Attributes/Caption),Tuples($count;$expand=Members($select=Name,Attributes/Caption))),Cells($select=Ordinal,Value,FormattedValue,Status)",
+			"{\"MDX\":\"" + textMDX.value + "\"}",
+			"application/json; charset=utf-8", 
+			"application/json; charset=utf-8", 
+			function( _data )
+			{
+				clear( cellsetTableBody );
+				var tr = cellsetTableBody.appendChild( document.createElement( "tr" ));
+				var cell = tr.appendChild( document.createElement( "td" ));
+				if ( _data.Axes[1].Hierarchies.length > 1 )
+					cell.colSpan = _data.Axes[1].Hierarchies.length;
+				if ( _data.Axes[0].Hierarchies.length > 1 )
+					cell.rowSpan = _data.Axes[0].Hierarchies.length;
+				for ( var iColHier = 0; iColHier < _data.Axes[0].Hierarchies.length; ++iColHier )
+				{
+					if ( iColHier > 0 )
+						tr = cellsetTableBody.appendChild( document.createElement( "tr" ));
+					for ( var iColumn = 0; iColumn < _data.Axes[0].Tuples.length; ++iColumn )
+					{
+						cell = tr.appendChild( document.createElement( "td" ));
+						if ( _data.Axes[0].Tuples[iColumn].Members[iColHier].Attributes )
+							cell.textContent = _data.Axes[0].Tuples[iColumn].Members[iColHier].Attributes.Caption || _data.Axes[0].Tuples[iColumn].Members[iColHier].Name;
+						else
+							cell.textContent = _data.Axes[0].Tuples[iColumn].Members[iColHier].Name;
+					}
+				}
+				for ( var iRow = 0; iRow < _data.Axes[1].Tuples.length; ++iRow )
+				{
+					tr = cellsetTableBody.appendChild( document.createElement( "tr" ));
+					for ( var iRowHier = 0; iRowHier < _data.Axes[1].Hierarchies.length; ++iRowHier )
+					{
+						cell = tr.appendChild( document.createElement( "td" ));
+						if ( _data.Axes[1].Tuples[iRow].Members[iRowHier].Attributes )
+							cell.textContent = _data.Axes[1].Tuples[iRow].Members[iRowHier].Attributes.Caption || _data.Axes[1].Tuples[iRow].Members[iRowHier].Name;
+						else
+							cell.textContent = _data.Axes[1].Tuples[iRow].Members[iRowHier].Name;
+					}
+					for ( var iColumn = 0; iColumn < _data.Axes[0].Tuples.length; ++iColumn )
+					{
+						cell = tr.appendChild( document.createElement( "td" ));
+						var iCellOrdinal = iRow * _data.Axes[0].Tuples.length + iColumn;
+						switch( _data.Cells[iCellOrdinal].Status || "Data" )
+						{
+							case "Data" :
+								cell.align = "right";
+								cell.textContent = _data.Cells[iCellOrdinal].FormattedValue || _data.Cells[iCellOrdinal].Value;
+								break;
+							case "Null" : 
+								break;
+							default : cell.textContent = "error";
+						}
+					}
+				}
+				cellsettable.style.display = "";
+			}, 
+			function( _response )
+			{
+				handleError( 
+					_response, 
+					function()
+					{
+						// Retry the update immediately!
+						executeMDX();
+					}
+				);
+			}
+		);	
+	}
+	
+	/*
+	 * Register event handlers
+	 */
+
+	btnExecute.addEventListener( "click", executeMDX );
+};
+
+</script>
+
+<body onload="init();">
+
+Service URI: <input type="text" id="servicerootURI" value="/api/v1/">
+<button id="btnexecute">Execute</button>
+<br>
+<br>
+<textarea id="MDX" cols="128" rows="10">WITH 
+  MEMBER [plan_report].[Variance%] as
+    ([plan_report].[actual]-[plan_report].[budget])/[plan_report].[budget], FORMAT_STRING = '#.#%' 
+SELECT
+  {[plan_time].[All Years]}*{[plan_report].[budget],[plan_report].[actual],[plan_report].[Variance%]} on 0,
+  {[plan_chart_of_accounts].[test expand down]} on 1 
+FROM [plan_Report] 
+WHERE ([plan_business_unit].[10000],[plan_department].[415],[plan_exchange_rates].[actual])</textarea>
+<br>
+<br>
+<table style="display:none" id="cellsettable" border="1">
+	<tbody id="cellsettableBody"></tbody>
+</table>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+﻿FORMAT==100
+feedstrings;
+skipcheck;
+
+
+feeders;
+['AccountName']=>DB('}DimensionFormats_plan_chart_of_accounts',
+!plan_chart_of_accounts,'test','BODY','Underline');
+

@@ -1,0 +1,13 @@
+﻿FORMAT==100
+feedstrings;
+skipcheck;
+
+[]=S:IF(DIMIX('}DimensionFormatStyles_plan_format_template',
+!}DimensionFormatStyles_plan_time)>0,
+DB('}DimensionFormats_plan_format_template',
+trim(str(ELLEV('plan_time', !plan_time),1,0)),
+!}DimensionFormatStyles_plan_time,
+!}DimensionFormatItems,
+!}DimensionFormatAttributes),stet);
+
+feeders;

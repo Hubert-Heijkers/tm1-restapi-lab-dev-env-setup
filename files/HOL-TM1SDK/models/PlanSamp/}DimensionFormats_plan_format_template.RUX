@@ -1,0 +1,28 @@
+﻿FORMAT==100
+feedstrings;
+skipcheck;
+
+
+feeders;
+['Revenue']=>DB('}DimensionFormats_plan_chart_of_accounts',
+'Net Operating Income',
+!}DimensionFormatStyles_plan_format_template,
+!}DimensionFormatItems,
+!}DimensionFormatAttributes);
+
+['0']=>DB('}DimensionFormats_plan_chart_of_accounts',
+'Net Operating Income',
+!}DimensionFormatStyles_plan_format_template,
+!}DimensionFormatItems,
+!}DimensionFormatAttributes);
+
+['Revenue']=>DB('}DimensionFormats_plan_chart_of_accounts',
+'Net Operating Income',
+!}DimensionFormatStyles_plan_format_template,
+!}DimensionFormatItems,
+!}DimensionFormatAttributes);
+
+['0','plan_column_style1']=>DB('}DimensionFormats_plan_time','2004','plan_column_style1',
+!}DimensionFormatItems,!}DimensionFormatAttributes);
+
+

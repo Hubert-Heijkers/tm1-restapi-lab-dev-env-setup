@@ -1,0 +1,56 @@
+﻿FORMAT==100
+feedstrings;
+skipcheck;
+
+#############################################################################
+['Underline']=S:
+IF(DIMIX('}DimensionFormatStyles_plan_format_template', !}DimensionFormatStyles_plan_chart_of_accounts)>0,
+IF(ATTRS('plan_chart_of_accounts',!plan_chart_of_accounts,'FormatGroup') @<>'',
+DB('}DimensionFormats_plan_format_template',
+ATTRS('plan_chart_of_accounts',!plan_chart_of_accounts,'FormatGroup'),
+!}DimensionFormatStyles_plan_chart_of_accounts,!}DimensionFormatItems,
+!}DimensionFormatAttributes),
+IF(
+ELPARN('plan_chart_of_accounts', !plan_chart_of_accounts) > 0 &
+ELCOMP('plan_chart_of_accounts', ELPAR('plan_chart_of_accounts',!plan_chart_of_accounts, 1) ,
+ELCOMPN('plan_chart_of_accounts', ELPAR('plan_chart_of_accounts',!plan_chart_of_accounts, 1)))
+@= !plan_chart_of_accounts,
+DB('}DimensionFormats_plan_format_template',
+ATTRS('plan_chart_of_accounts',ELPAR('plan_chart_of_accounts', !plan_chart_of_accounts, 1),'FormatGroup'),
+!}DimensionFormatStyles_plan_chart_of_accounts,!}DimensionFormatItems,
+!}DimensionFormatAttributes)
+,stet))
+,stet);
+
+##############################################################################
+
+
+['plan_pl_variance_style1']=S:IF(DIMIX('}DimensionFormatStyles_plan_format_template',
+!}DimensionFormatStyles_plan_chart_of_accounts)>0,
+IF(ATTRS('plan_chart_of_accounts',!plan_chart_of_accounts,'AccountClass') @<>'',
+DB('}DimensionFormats_plan_format_template',
+ATTRS('plan_chart_of_accounts',!plan_chart_of_accounts,'AccountClass'),
+!}DimensionFormatStyles_plan_chart_of_accounts,
+!}DimensionFormatItems,
+!}DimensionFormatAttributes)
+,stet)
+,stet);
+
+###################################################################
+[]=S:IF(DIMIX('}DimensionFormatStyles_plan_format_template',
+!}DimensionFormatStyles_plan_chart_of_accounts)>0,
+DB('}DimensionFormats_plan_format_template',
+trim(str(ELLEV('plan_chart_of_accounts', !plan_chart_of_accounts),1,0)),
+!}DimensionFormatStyles_plan_chart_of_accounts,!}DimensionFormatItems,
+!}DimensionFormatAttributes),
+stet);
+
+
+
+
+
+
+
+
+
+

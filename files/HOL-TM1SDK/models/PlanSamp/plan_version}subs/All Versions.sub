@@ -1,0 +1,10 @@
+﻿283,100
+284,"All Versions"
+11,20190124102020
+274,VersionName
+18,0
+275,75
+{TM1FILTERBYLEVEL( { HIERARCHIZE( {TM1SUBSETALL( [plan_version] )} ) }, 0)}
+278,0
+281,0
+270,0

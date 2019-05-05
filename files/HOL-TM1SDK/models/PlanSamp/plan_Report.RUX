@@ -1,0 +1,99 @@
+﻿FORMAT==100
+SKIPCHECK;
+[plan_exchange_rates:'local',plan_report:'actual']=
+N:DB('plan_Report',!plan_business_unit,!plan_department,!plan_chart_of_accounts,'actual','actual',!plan_time)*
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'actual',!plan_time);
+
+[plan_exchange_rates:'beginning',plan_report:'actual']=
+N:DB('plan_Report',!plan_business_unit,!plan_department,!plan_chart_of_accounts,'actual','actual',!plan_time)*
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'beginning',!plan_time);
+
+[plan_exchange_rates:'ending',plan_report:'actual']=
+N:DB('plan_Report',!plan_business_unit,!plan_department,!plan_chart_of_accounts,'actual','actual',!plan_time)*
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'ending',!plan_time);
+
+[plan_exchange_rates:'Planning',plan_report:'actual']=
+N:DB('plan_Report',!plan_business_unit,!plan_department,!plan_chart_of_accounts,'actual','actual',!plan_time)*
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'Planning',!plan_time);
+
+[plan_exchange_rates:'spot',plan_report:'actual']=
+N:DB('plan_Report',!plan_business_unit,!plan_department,!plan_chart_of_accounts,'actual','actual',!plan_time)*
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'spot',!plan_time);
+
+
+
+
+['ly budget']=N:DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,!plan_exchange_rates,'budget',
+subst(!plan_time,1,4)|STR((NUMBR(subst(!plan_time,5,4))-1),4,0));
+
+['ly actual']=N:DB('plan_Report',!plan_business_unit,!plan_department,!plan_chart_of_accounts,
+!plan_exchange_rates,
+'actual',
+subst(!plan_time,1,4)|STR((NUMBR(subst(!plan_time,5,4))-1),4,0));
+
+
+
+
+['beginning']=N:DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'local',!plan_report,!plan_time)/
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'beginning',!plan_time);
+
+['ending']=N:DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'local',!plan_report,!plan_time)/
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'ending',!plan_time);
+
+['planning']=N:DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'local',!plan_report,!plan_time)/
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'planning',!plan_time);
+
+['spot']=N:DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'local',!plan_report,!plan_time)/
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'spot',!plan_time);
+
+['plan_exchange_rates':'local']=N:DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'actual',!plan_report,!plan_time)*
+DB('plan_ExchangeRate',ATTRS('plan_business_unit',!plan_business_unit,'currency'),'actual',!plan_time);
+
+['Variance']=N:['plan_report':'actual']-['budget'];
+
+['ly budget v budget variance']=N:['budget']-['ly budget'];
+
+['ly actual v actual variance']=N:['plan_report':'actual']-['ly actual'];
+
+FEEDERS;
+[plan_exchange_rates:'actual']=>['local'];
+[plan_exchange_rates:'actual']=>['Beginning'];
+[plan_exchange_rates:'actual']=>['ending'];
+[plan_exchange_rates:'actual']=>['Planning'];
+[plan_exchange_rates:'actual']=>['Spot'];
+
+['budget']=>DB('plan_Report',!plan_business_unit,
+!plan_department,!plan_chart_of_accounts,!plan_exchange_rates,'ly budget',
+subst(!plan_time,1,4)|STR((NUMBR(subst(!plan_time,5,4))+1),4,0));
+
+[plan_report:'actual']=>DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,!plan_exchange_rates,'ly actual',
+subst(!plan_time,1,4)|STR((NUMBR(subst(!plan_time,5,4))+1),4,0));
+
+['local']=>DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'beginning',!plan_report,!plan_time);
+
+['local']=>DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'ending',!plan_report,!plan_time);
+
+['local']=>DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'planning',!plan_report,!plan_time);
+
+['local']=>DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'spot',!plan_report,!plan_time);
+
+['local']=>DB('plan_Report',!plan_business_unit,!plan_department,
+!plan_chart_of_accounts,'actual',!plan_report,!plan_time);
+
+['budget']=>['Variance'];
+['plan_report':'actual']=>['Variance'];
+['ly budget']=>['ly budget v budget variance'];
+['budget']=>['ly budget v budget variance'];
+['plan_report':'actual']=>['ly actual v actual variance'];
+['ly actual']=>['ly actual v actual variance'];

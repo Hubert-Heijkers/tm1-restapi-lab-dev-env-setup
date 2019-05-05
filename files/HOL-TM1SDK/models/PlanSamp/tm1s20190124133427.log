@@ -1,0 +1,15 @@
+﻿#LOG_FORMAT=1
+#LOGID=4
+#LOGIV=
+"","20181219210309","20181219210309","Admin","S","20181218103420","20181219210309","}DimensionProperties","}Dimensions","LAST_TIME_UPDATED",""
+"","20181219210309","20181219210309","Admin","S","","20181219210309","}DimensionProperties","}Hierarchies_Sandboxes","LAST_TIME_UPDATED",""
+#"","20190124133427","CubeSerialized: }CubeProperties: by *"
+#"","20190124133427","CubeSerialized: }DimensionProperties: by *"
+#"","20190124133427","CubeSerialized: }ElementAttributes_}Cultures: by *"
+#"","20190124133427","CubeSerialized: }StatsByChore: by *"
+#"","20190124133427","CubeSerialized: }StatsByClient: by *"
+#"","20190124133427","CubeSerialized: }StatsByCube: by *"
+#"","20190124133427","CubeSerialized: }StatsByCubeByClient: by *"
+#"","20190124133427","CubeSerialized: }StatsByProcess: by *"
+#"","20190124133427","CubeSerialized: }StatsForServer: by *"
+

@@ -1,0 +1,60 @@
+﻿389,100
+370,0
+361,1
+362,1
+363,0.
+364,0.
+365,0.
+366,0.
+367,0
+376,0
+375,b:0.#########G|0|
+374,5
+7,plan_chart_of_accounts
+6,plan_top_level_accts
+7,plan_business_unit
+6,All Business Units
+7,plan_time
+6,All Years
+7,plan_version
+6,All Versions
+7,plan_exchange_rates
+270,0
+274,
+275,58
+{ HIERARCHIZE( {TM1SUBSETALL( [plan_exchange_rates] )} ) }
+281,0
+282,
+360,1
+7,plan_source
+6,Goal
+371,1
+7,plan_department
+6,Dy Nlevel Dept
+373,5
+1
+1
+2
+2
+6
+372,0
+372,00
+384,0
+385,0
+377,4
+380
+456
+870
+835
+378,0
+382,255
+379,7
+0
+0
+0
+0
+0
+0
+0
+11,20050107201527
+381,0

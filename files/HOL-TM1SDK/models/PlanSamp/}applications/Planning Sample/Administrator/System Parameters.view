@@ -1,0 +1,4 @@
+﻿FILE_FORMAT=100
+ENTRYNAME=System Parameters
+ENTRYTYPE=view
+ENTRYREFERENCE=TM1:///VIEW/PUBLIC/plan_control/system parameters

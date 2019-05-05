@@ -1,0 +1,5 @@
+﻿FILE_FORMAT=100
+ENTRYNAME=Income Statement by Business Unit
+ENTRYTYPE=blob
+ENTRYREFERENCE=TM1:///blob/PUBLIC/.\}Externals\Income Statement by Business Unit.xlsx_20150504140058.xlsx
+REMOVEBLOBONDELETE=Yes

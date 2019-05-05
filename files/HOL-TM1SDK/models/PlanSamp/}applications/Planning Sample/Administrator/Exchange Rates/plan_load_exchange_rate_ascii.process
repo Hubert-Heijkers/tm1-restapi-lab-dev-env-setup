@@ -1,0 +1,4 @@
+﻿FILE_FORMAT=100
+ENTRYNAME=plan_load_exchange_rate_ascii
+ENTRYTYPE=process
+ENTRYREFERENCE=TM1:///PROCESS/PUBLIC/plan_load_exchange_rate_ascii

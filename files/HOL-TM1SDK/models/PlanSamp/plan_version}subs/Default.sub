@@ -1,0 +1,14 @@
+﻿283,100
+11,
+274,VersionName
+18,0
+275,56
+{TM1FILTERBYLEVEL( {TM1SUBSETALL( [plan_version] )}, 0)}
+278,0
+281,0
+270,5
+FY 2003 Budget
+FY 2004 Budget
+FY 2004 Forecast
+FY 2005 Budget-baseline
+FY 2005 Budget-upside

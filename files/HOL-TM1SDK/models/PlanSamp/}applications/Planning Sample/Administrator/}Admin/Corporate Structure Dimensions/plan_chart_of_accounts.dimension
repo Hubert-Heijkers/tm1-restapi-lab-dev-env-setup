@@ -1,0 +1,4 @@
+﻿FILE_FORMAT=100
+ENTRYNAME=plan_chart_of_accounts
+ENTRYTYPE=dimension
+ENTRYREFERENCE=TM1:///DIMENSION/PUBLIC/plan_chart_of_accounts

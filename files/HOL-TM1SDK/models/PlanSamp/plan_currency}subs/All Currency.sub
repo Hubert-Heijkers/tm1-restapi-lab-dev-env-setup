@@ -1,0 +1,15 @@
+﻿283,100
+11,
+274,
+18,0
+275,52
+{ HIERARCHIZE( {TM1SUBSETALL( [plan_currency] )} ) }
+278,0
+281,0
+282,rency Rows
+270,5
+JPY
+EUR
+USD
+GBP
+AUD

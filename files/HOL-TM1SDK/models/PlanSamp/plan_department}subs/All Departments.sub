@@ -1,0 +1,10 @@
+﻿283,100
+284,"All Departments"
+11,20190124102020
+274,Department
+18,0
+275,54
+{ HIERARCHIZE( {TM1SUBSETALL( [plan_department] )} ) }
+278,0
+281,0
+270,0
