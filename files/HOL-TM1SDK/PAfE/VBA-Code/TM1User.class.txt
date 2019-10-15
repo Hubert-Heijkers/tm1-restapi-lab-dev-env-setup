@@ -1,0 +1,47 @@
+Option Explicit
+
+Private m_Name As String
+Private m_FriendlyName As String
+
+Public Function Deserialize(oAPI As tm1api, JSON As Object) As Boolean
+
+    Deserialize = False
+    
+    If Not JSON.Properties Is Nothing And JSON.Properties.Count > 0 Then
+        
+        Dim propCount As Integer
+        propCount = JSON.Properties.Count
+        Dim iProp As Integer
+        For iProp = 0 To propCount - 1
+        
+            Dim propertyName As String
+            propertyName = JSON.Properties.GetKeys().Item(iProp)
+            
+            Select Case propertyName
+                
+                Case "Name"
+                    m_Name = JSON.Properties.Item(propertyName).Value
+
+                Case "FriendlyName"
+                    m_FriendlyName = JSON.Properties.Item(propertyName).Value
+
+                'User has more properties but we'll stick with the once we need for this example
+
+            End Select
+            
+        Next iProp
+    
+        Deserialize = True
+    
+    End If
+
+End Function
+
+Public Property Get Name() As String
+    Name = m_Name
+End Property
+
+Public Property Get FriendlyName() As String
+    FriendlyName = m_FriendlyName
+End Property
+

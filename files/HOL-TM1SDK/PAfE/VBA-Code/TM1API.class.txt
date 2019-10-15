@@ -1,0 +1,76 @@
+Option Explicit
+
+Public Function DeserializeSessionCollection(JSON As Object) As Collection
+
+    Dim oSessions As New Collection
+    If Not JSON.Members Is Nothing Then
+        
+        Dim itemCount As Integer
+        itemCount = JSON.Members.Count
+        Dim iItem As Integer
+        For iItem = 0 To itemCount - 1
+        
+            Dim Session As TM1Session
+            Set Session = DeserializeSession(JSON.Members.Item(iItem))
+            If Not Session Is Nothing Then
+                oSessions.Add Session
+            End If
+            
+        Next iItem
+    
+    End If
+    Set DeserializeSessionCollection = oSessions
+
+End Function
+
+Public Function DeserializeThreadCollection(JSON As Object) As Collection
+
+    Dim oThreads As New Collection
+    If Not JSON.Members Is Nothing Then
+        
+        Dim itemCount As Integer
+        itemCount = JSON.Members.Count
+        Dim iItem As Integer
+        For iItem = 0 To itemCount - 1
+        
+            Dim thread As TM1Thread
+            Set thread = DeserializeThread(JSON.Members.Item(iItem))
+            If Not thread Is Nothing Then
+                oThreads.Add thread
+            End If
+            
+        Next iItem
+    
+    End If
+    Set DeserializeThreadCollection = oThreads
+
+End Function
+
+Public Function DeserializeSession(JSON As Object) As TM1Session
+
+    Dim oSession As New TM1Session
+    If oSession.Deserialize(Me, JSON) Then
+        Set DeserializeSession = oSession
+    End If
+    
+End Function
+
+Public Function DeserializeThread(JSON As Object) As TM1Thread
+
+    Dim oThread As New TM1Thread
+    If oThread.Deserialize(Me, JSON) Then
+        Set DeserializeThread = oThread
+    End If
+    
+End Function
+
+Public Function DeserializeUser(JSON As Object) As TM1User
+
+    Dim oUser As New TM1User
+    If oUser.Deserialize(Me, JSON) Then
+        Set DeserializeUser = oUser
+    End If
+    
+End Function
+
+
