@@ -16,7 +16,7 @@ Private m_WaitTime As String
 Private m_Info As String
 Private m_Session As TM1Session
 
-Public Function Deserialize(oAPI As tm1api, JSON As Object) As Boolean
+Public Function Deserialize(oAPI As TM1API, JSON As Object) As Boolean
 
     Deserialize = False
     
@@ -146,4 +146,3 @@ End Property
 Public Property Get Session() As TM1Session
     Set Session = m_Session
 End Property
-

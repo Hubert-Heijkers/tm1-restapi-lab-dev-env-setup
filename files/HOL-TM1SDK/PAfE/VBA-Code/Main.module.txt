@@ -1,8 +1,202 @@
 Option Explicit
 
-Sub populateTopGrid()
+Sub populateTopGridBySession()
 
-    Dim oAPI As New tm1api
+    Dim oAPI As New TM1API
+    Dim oSheet As Worksheet
+    Dim bScreenupdating As Boolean
+    Dim request As String
+    Dim response As Object
+            
+    'get a reference to the first worksheet
+    Set oSheet = ThisWorkbook.Sheets("Sheet1")
+    
+    'remember screenupdating property and turn it off to avoid flickering
+    bScreenupdating = Application.ScreenUpdating
+    Application.ScreenUpdating = False
+
+    'clear the range used to render the data
+    Range(oSheet.Cells(5, 1), oSheet.Cells(500, 16)).ClearContents
+    Range(oSheet.Cells(5, 1), oSheet.Cells(500, 16)).ClearFormats
+    
+    'reset column sizes to 'default'
+    oSheet.Columns("A:P").ColumnWidth = oSheet.Cells(1, 9999).ColumnWidth
+    
+    'the request URL will be sent to the server
+    request = "/tm1/Planning Sample/api/v1/Sessions?$expand=User($select=Name,FriendlyName),Threads"
+
+    'sending the request to the server
+    Set response = Reporting.ActiveConnection.Get(request)
+
+    'checking for a response
+    If Not response Is Nothing Then
+    
+        Dim iRow As Integer
+        iRow = 5
+    
+        'the response contains a collection wrapped in a JSON object and stored in a 'value' property
+        If Not response.Properties Is Nothing And response.Properties.Count() > 0 Then
+        
+            Dim sessionsJSON As Object
+            Set sessionsJSON = response.Properties.Item("value")
+            Dim sessionsCollection As Collection
+            Set sessionsCollection = oAPI.DeserializeSessionCollection(sessionsJSON)
+
+            Dim sessionCount As Integer
+            sessionCount = sessionsCollection.Count
+            Dim iSession As Long
+            For iSession = 1 To sessionCount
+            
+                Dim oSession As TM1Session
+                Set oSession = sessionsCollection.Item(iSession)
+
+                'print the headers for the session
+                With oSheet.Cells(iRow, 1)
+                    .Value = "SessionID"
+                    .Font.Bold = True
+                    .Font.Color = RGB(150, 0, 0)
+                End With
+                With oSheet.Cells(iRow, 2)
+                    .Value = "User"
+                    .Font.Bold = True
+                    .Font.Color = RGB(150, 0, 0)
+                End With
+                With oSheet.Cells(iRow, 3)
+                    .Value = "Context"
+                    .Font.Bold = True
+                    .Font.Color = RGB(150, 0, 0)
+                End With
+                iRow = iRow + 1
+                
+                'print the details of the session
+                oSheet.Cells(iRow, 1) = oSession.ID
+                Dim oUser As TM1User
+                Set oUser = oSession.User()
+                If Not oUser Is Nothing Then
+                    oSheet.Cells(iRow, 2) = oUser.FriendlyName
+                End If
+                oSheet.Cells(iRow, 3) = oSession.Context
+                iRow = iRow + 1
+                
+                Dim oThreads As Collection
+                Set oThreads = oSession.Threads
+                
+                'display details of the threads if any
+                If Not oThreads Is Nothing And oThreads.Count > 0 Then
+
+                    'print the headers for the threads
+                    With oSheet.Cells(iRow, 1)
+                        .Value = "TheadID"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 2)
+                        .Value = "Type"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 3)
+                        .Value = "Name"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 4)
+                        .Value = "State"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 5)
+                        .Value = "Function"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 6)
+                        .Value = "Object Type"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 7)
+                        .Value = "Object Name"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 8)
+                        .Value = "RLocks"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 9)
+                        .Value = "IXLocks"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 10)
+                        .Value = "WLocks"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 11)
+                        .Value = "Elapsed Time"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 12)
+                        .Value = "Wait Time"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    With oSheet.Cells(iRow, 13)
+                        .Value = "Info"
+                        .Font.Bold = True
+                        .Font.Color = RGB(150, 0, 0)
+                    End With
+                    iRow = iRow + 1
+                
+                    'print the details for the individual threads
+                    Dim threadCount As Integer
+                    threadCount = oThreads.Count
+                    Dim iThread As Long
+                    For iThread = 1 To threadCount
+                    
+                        Dim oThread As TM1Thread
+                        Set oThread = oThreads.Item(iThread)
+                        oSheet.Cells(iRow, 1) = oThread.ID
+                        oSheet.Cells(iRow, 2) = oThread.ThreadType
+                        oSheet.Cells(iRow, 3) = oThread.Name
+                        oSheet.Cells(iRow, 4) = oThread.State
+                        oSheet.Cells(iRow, 5) = oThread.FunctionName
+                        oSheet.Cells(iRow, 6) = oThread.ObjectType
+                        oSheet.Cells(iRow, 7) = oThread.ObjectName
+                        oSheet.Cells(iRow, 8) = oThread.RLocks
+                        oSheet.Cells(iRow, 9) = oThread.IXLocks
+                        oSheet.Cells(iRow, 10) = oThread.WLocks
+                        oSheet.Cells(iRow, 11) = oThread.ElapsedTime
+                        oSheet.Cells(iRow, 12) = oThread.WaitTime
+                        oSheet.Cells(iRow, 13) = oThread.Info
+                        iRow = iRow + 1
+                    
+                    Next iThread
+                    iRow = iRow + 1
+                
+                End If
+
+            Next iSession
+
+            'setting the columns to autofit
+            oSheet.Columns("A:P").AutoFit
+
+        End If
+    
+    End If
+
+    'resetting screenupdating
+    Application.ScreenUpdating = bScreenupdating
+
+End Sub
+
+Sub populateTopGridByThread()
+
+    Dim oAPI As New TM1API
     Dim oSheet As Worksheet
     Dim bScreenupdating As Boolean
     Dim request As String
@@ -15,6 +209,10 @@ Sub populateTopGrid()
     bScreenupdating = Application.ScreenUpdating
     Application.ScreenUpdating = False
 
+    'clear the range used to render the data
+    Range(oSheet.Cells(5, 1), oSheet.Cells(500, 16)).ClearContents
+    Range(oSheet.Cells(5, 1), oSheet.Cells(500, 16)).ClearFormats
+    
     'the request URL will be sent to the server
     request = "/tm1/Planning Sample/api/v1/Threads?$expand=Session($expand=User($select=Name,FriendlyName))"
 
@@ -23,6 +221,9 @@ Sub populateTopGrid()
 
     'checking for a response
     If Not response Is Nothing Then
+    
+        Dim iRow As Integer
+        iRow = 5
     
         'the response contains a collection wrapped in a JSON object and stored in a 'value' property
         If Not response.Properties Is Nothing And response.Properties.Count() > 0 Then
@@ -33,86 +234,87 @@ Sub populateTopGrid()
             Set threadsCollection = oAPI.DeserializeThreadCollection(threadsJSON)
 
             'print the headers for the columns
-            With oSheet.Cells(5, 1)
+            With oSheet.Cells(iRow, 1)
                 .Value = "SessionID"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 2)
+            With oSheet.Cells(iRow, 2)
                 .Value = "User"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 3)
+            With oSheet.Cells(iRow, 3)
                 .Value = "TheadID"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 4)
+            With oSheet.Cells(iRow, 4)
                 .Value = "Type"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 5)
+            With oSheet.Cells(iRow, 5)
                 .Value = "Name"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 6)
+            With oSheet.Cells(iRow, 6)
                 .Value = "Context"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 7)
+            With oSheet.Cells(iRow, 7)
                 .Value = "State"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 8)
+            With oSheet.Cells(iRow, 8)
                 .Value = "Function"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 9)
+            With oSheet.Cells(iRow, 9)
                 .Value = "Object Type"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 10)
+            With oSheet.Cells(iRow, 10)
                 .Value = "Object Name"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 11)
+            With oSheet.Cells(iRow, 11)
                 .Value = "RLocks"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 12)
+            With oSheet.Cells(iRow, 12)
                 .Value = "IXLocks"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 13)
+            With oSheet.Cells(iRow, 13)
                 .Value = "WLocks"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 14)
+            With oSheet.Cells(iRow, 14)
                 .Value = "Elapsed Time"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 15)
+            With oSheet.Cells(iRow, 15)
                 .Value = "Wait Time"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
-            With oSheet.Cells(5, 16)
+            With oSheet.Cells(iRow, 16)
                 .Value = "Info"
                 .Font.Bold = True
                 .Font.Color = RGB(150, 0, 0)
             End With
+            iRow = iRow + 1
             
             'print the details for the individual threads
             Dim threadCount As Integer
@@ -125,30 +327,31 @@ Sub populateTopGrid()
                 Dim oSession As TM1Session
                 Set oSession = oThread.Session()
                 If Not oSession Is Nothing Then
-                    oSheet.Cells(5 + iThread, 1) = oSession.ID
+                    oSheet.Cells(iRow, 1) = oSession.ID
                     Dim oUser As TM1User
                     Set oUser = oSession.User()
                     If Not oUser Is Nothing Then
-                        oSheet.Cells(5 + iThread, 2) = oUser.FriendlyName
+                        oSheet.Cells(iRow, 2) = oUser.FriendlyName
                     End If
                 Else
-                    oSheet.Cells(5 + iThread, 1).ClearContents
-                    oSheet.Cells(5 + iThread, 2).ClearContents
+                    oSheet.Cells(iRow, 1).ClearContents
+                    oSheet.Cells(iRow, 2).ClearContents
                 End If
-                oSheet.Cells(5 + iThread, 3) = oThread.ID
-                oSheet.Cells(5 + iThread, 4) = oThread.ThreadType
-                oSheet.Cells(5 + iThread, 5) = oThread.Name
-                oSheet.Cells(5 + iThread, 6) = oThread.Context
-                oSheet.Cells(5 + iThread, 7) = oThread.State
-                oSheet.Cells(5 + iThread, 8) = oThread.FunctionName
-                oSheet.Cells(5 + iThread, 9) = oThread.ObjectType
-                oSheet.Cells(5 + iThread, 10) = oThread.ObjectName
-                oSheet.Cells(5 + iThread, 11) = oThread.RLocks
-                oSheet.Cells(5 + iThread, 12) = oThread.IXLocks
-                oSheet.Cells(5 + iThread, 13) = oThread.WLocks
-                oSheet.Cells(5 + iThread, 14) = oThread.ElapsedTime
-                oSheet.Cells(5 + iThread, 15) = oThread.WaitTime
-                oSheet.Cells(5 + iThread, 16) = oThread.Info
+                oSheet.Cells(iRow, 3) = oThread.ID
+                oSheet.Cells(iRow, 4) = oThread.ThreadType
+                oSheet.Cells(iRow, 5) = oThread.Name
+                oSheet.Cells(iRow, 6) = oThread.Context
+                oSheet.Cells(iRow, 7) = oThread.State
+                oSheet.Cells(iRow, 8) = oThread.FunctionName
+                oSheet.Cells(iRow, 9) = oThread.ObjectType
+                oSheet.Cells(iRow, 10) = oThread.ObjectName
+                oSheet.Cells(iRow, 11) = oThread.RLocks
+                oSheet.Cells(iRow, 12) = oThread.IXLocks
+                oSheet.Cells(iRow, 13) = oThread.WLocks
+                oSheet.Cells(iRow, 14) = oThread.ElapsedTime
+                oSheet.Cells(iRow, 15) = oThread.WaitTime
+                oSheet.Cells(iRow, 16) = oThread.Info
+                iRow = iRow + 1
             
             Next iThread
 

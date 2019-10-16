@@ -5,7 +5,7 @@ Private m_Context As String
 Private m_User As TM1User
 Private m_Threads As Collection
 
-Public Function Deserialize(oAPI As tm1api, JSON As Object) As Boolean
+Public Function Deserialize(oAPI As TM1API, JSON As Object) As Boolean
 
     Deserialize = False
     
@@ -58,4 +58,3 @@ End Property
 Public Property Get Threads() As Collection
     Set Threads = m_Threads
 End Property
-

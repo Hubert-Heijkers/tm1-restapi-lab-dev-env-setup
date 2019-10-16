@@ -3,7 +3,7 @@ Option Explicit
 Private m_Name As String
 Private m_FriendlyName As String
 
-Public Function Deserialize(oAPI As tm1api, JSON As Object) As Boolean
+Public Function Deserialize(oAPI As TM1API, JSON As Object) As Boolean
 
     Deserialize = False
     
@@ -44,4 +44,3 @@ End Property
 Public Property Get FriendlyName() As String
     FriendlyName = m_FriendlyName
 End Property
-
